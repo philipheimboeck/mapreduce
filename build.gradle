@@ -1,0 +1,18 @@
+apply plugin: 'application'
+
+mainClassName = "at.phe.def.mapreduce.MapReduceMain"
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+dependencies {
+
+    compile project(':DEF-Commons')
+    compile project(':DEF-WorkerModule')
+    compile project(':DEF-WorkerAPI')
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
