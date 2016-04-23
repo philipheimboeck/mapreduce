@@ -3,8 +3,14 @@ package at.phe.def.mapreduce.demo.storyteller;
 import at.enfilo.def.prototype1.commons.DEFTypeConverter;
 import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
 /**
  * Author: Philip Heimböck
@@ -14,36 +20,26 @@ public class StoryTeller extends JavaBaseLibraryFunction {
 
     private final Random random = new Random();
 
-    private final int WORD_LENGTH_MIN = 1;
-    private final int WORD_LENGTH_MAX = 10;
-    private final int SENTENCE_LENGTH_MIN = 3;
-    private final int SENTENCE_LENGTH_MAX = 40;
-
     /**
      * Create a new random sentence
      *
-     * @param minSentenceLength
-     * @param maxSentenceLength
      * @return
      */
-    private String getRandomSentence(int minSentenceLength, int maxSentenceLength) {
-        StringBuilder stringBuilder = new StringBuilder();
+    private String getRandomSentence() throws FileNotFoundException {
+        File dir = new File("texts");
 
-        int sentenceLength = random.nextInt(maxSentenceLength - minSentenceLength) + minSentenceLength;
+        File[] textFiles = dir.listFiles((dir1, filename) -> { return filename.endsWith(".txt"); });
+        File chosenTextFile = textFiles[random.nextInt(textFiles.length)];
 
-        for (int i = 0; i < sentenceLength; i++) {
-            int wordLength = random.nextInt(WORD_LENGTH_MAX - WORD_LENGTH_MIN) + WORD_LENGTH_MIN;
+        FileInputStream inputStream = new FileInputStream(chosenTextFile);
+        Scanner scanner = new Scanner(inputStream, "UTF-8").useDelimiter("\\.");
 
-            char word[] = new char[wordLength];
-            for (int j = 0; j < wordLength; j++) {
-                word[j] = (char) (random.nextInt(26) + 'a');
-            }
-
-            stringBuilder.append(word);
-            stringBuilder.append(' ');
+        ArrayList<String> sentences = new ArrayList<>();
+        while (scanner.hasNext()) {
+            sentences.add(scanner.next() + ".");
         }
 
-        return stringBuilder.toString();
+        return sentences.get(random.nextInt(sentences.size()));
     }
 
     @Override
@@ -52,7 +48,7 @@ public class StoryTeller extends JavaBaseLibraryFunction {
 
         int numberSentences = DEFTypeConverter.convert(inParameters.get(0), Integer.class);
         for(int i = 0; i < numberSentences; i++) {
-            storyBuilder.append(getRandomSentence(SENTENCE_LENGTH_MIN, SENTENCE_LENGTH_MAX));
+            storyBuilder.append(getRandomSentence());
         }
 
         setResult(storyBuilder.toString());

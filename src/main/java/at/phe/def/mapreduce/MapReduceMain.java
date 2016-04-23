@@ -1,5 +1,6 @@
 package at.phe.def.mapreduce;
 
+import at.enfilo.def.prototype1.commons.DEFTypeConverter;
 import at.enfilo.def.prototype1.commons.PersistenceHandler;
 import at.enfilo.def.prototype1.commons.PersistenceHandlerFactory;
 import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
@@ -51,10 +52,7 @@ public class MapReduceMain {
         Collection<Callable<TaskResult>> reducerRunnables = new ArrayList<>();
 
         // Provide a list with runnable StoryTellers
-        tasks.forEach(taskDTO -> storytellerRunnables.add(() -> {
-                    return dispatcherClient.runTask(taskDTO);
-                }
-        ));
+        tasks.forEach(taskDTO -> storytellerRunnables.add(() -> dispatcherClient.runTask(taskDTO)));
 
         try {
             // Run all storytellers
@@ -76,20 +74,25 @@ public class MapReduceMain {
 
             executorService.invokeAll(mapperRunnables);
 
-            // Run all reducers
+
+            // Shuffle the map output
+            Shuffler shuffler = new Shuffler(3);
             mapperTasks.forEach(taskDTO -> {
                 try {
-                    String tuples = persistenceHandler.readResult(programId, jobId, taskDTO.getId());
-                    TaskDTO task = createReduceTask(tuples);
-                    reducerTasks.add(task);
-                    reducerRunnables.add(() -> dispatcherClient.runTask(task));
-
-                } catch (ResourceAccessException | ResourceNotExistsException e) {
+                    shuffler.shuffle(taskDTO);
+                } catch (ResourceNotExistsException | ResourceAccessException e) {
                     e.printStackTrace();
                 }
             });
 
-            System.out.println("Starting the reducers");
+            shuffler.getShuffled().forEach(shuffledTupleList -> {
+                String converted = DEFTypeConverter.convert(shuffledTupleList);
+                TaskDTO task = createReduceTask(converted);
+                reducerTasks.add(task);
+                reducerRunnables.add(() -> dispatcherClient.runTask(task));
+            });
+
+            // Start the reducers
             executorService.invokeAll(reducerRunnables);
 
             reducerTasks.forEach(this::printResult);
@@ -118,7 +121,7 @@ public class MapReduceMain {
 
         List<TaskDTO> tasks = new ArrayList<>();
         List<String> inParameters = new ArrayList<>();
-        inParameters.add("100"); // Number of sentences
+        inParameters.add("10"); // Number of sentences
 
         // Create tasks
         for (int i = 0; i < numberTasks; i++) {

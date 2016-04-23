@@ -12,6 +12,7 @@ public class TupleList implements Serializable {
     private ArrayList<Tuple<String, Integer>> tuples;
 
     public TupleList() {
+        tuples = new ArrayList<>();
     }
 
     public TupleList(ArrayList<Tuple<String, Integer>> tuples) {
