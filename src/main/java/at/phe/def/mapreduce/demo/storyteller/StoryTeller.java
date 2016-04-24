@@ -28,7 +28,9 @@ public class StoryTeller extends JavaBaseLibraryFunction {
     private String getRandomSentence() throws FileNotFoundException {
         File dir = new File("texts");
 
-        File[] textFiles = dir.listFiles((dir1, filename) -> { return filename.endsWith(".txt"); });
+        File[] textFiles = dir.listFiles((dir1, filename) -> {
+            return filename.endsWith(".txt");
+        });
         File chosenTextFile = textFiles[random.nextInt(textFiles.length)];
 
         FileInputStream inputStream = new FileInputStream(chosenTextFile);
@@ -47,7 +49,7 @@ public class StoryTeller extends JavaBaseLibraryFunction {
         StringBuilder storyBuilder = new StringBuilder();
 
         int numberSentences = DEFTypeConverter.convert(inParameters.get(0), Integer.class);
-        for(int i = 0; i < numberSentences; i++) {
+        for (int i = 0; i < numberSentences; i++) {
             storyBuilder.append(getRandomSentence());
         }
 

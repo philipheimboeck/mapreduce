@@ -24,7 +24,8 @@ import java.util.concurrent.*;
 public class MapReduceMain {
 
     private static final String STORYTELLER_FUNCTION_ID = "6a2d8863-e96e-4d00-82b7-cc35ae390044";
-    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc";
+    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc"; // Java
+//    private static final String MAP_FUNCTION_ID = "34cd23c4-f473-4010-a26e-69f56e6f3f83"; // Python
     private static final String REDUCE_FUNCTION_ID = "e2497481-a342-40a3-9ece-24e88f5888f1";
 
     private ExecutorService executorService;

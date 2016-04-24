@@ -1,0 +1,32 @@
+@startuml
+
+
+(*) --> "Create Job"
+--> "Create Tasks"
+--> "Submit Job"
+--> ===T1===
+===T1=== --> "Run Task 1"
+===T1=== --> "Run Task 2"
+===T1=== --> "Run Task n"
+"Run Task 1" --> ===T2===
+"Run Task 2" --> ===T2===
+"Run Task n" --> ===T2===
+--> "Create Map Jobs"
+--> ===M1===
+===M1=== --> "Run Map 1"
+===M1=== --> "Run Map 2"
+===M1=== --> "Run Map n"
+"Run Map 1" --> ===M2===
+"Run Map 2" --> ===M2===
+"Run Map n" --> ===M2===
+===M2=== --> "Shuffle"
+--> "Create Reduce Tasks"
+--> ===R1===
+===R1=== --> "Run Reduce 1"
+===R1=== --> "Run Reduce 2"
+===R1=== --> "Run Reduce m"
+"Run Reduce 1" --> ===R2===
+"Run Reduce 2" --> ===R2===
+"Run Reduce m" --> ===R2===
+===R2=== --> (*)
+@enduml
