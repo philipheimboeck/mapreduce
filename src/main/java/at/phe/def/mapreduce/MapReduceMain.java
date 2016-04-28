@@ -7,7 +7,11 @@ import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
 import at.enfilo.def.prototype1.commons.exceptions.ResourceNotExistsException;
 import at.enfilo.def.prototype1.commons.remote.TaskDTO;
 import at.enfilo.def.prototype1.commons.structs.TaskResult;
+import at.enfilo.def.prototype1.commons.structs.TaskState;
 import at.enfilo.def.prototype1.workermodule.DispatcherClient;
+import at.phe.def.mapreduce.partitioner.HashPartitioner;
+import com.google.gson.JsonArray;
+
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,10 +27,10 @@ import java.util.concurrent.*;
  */
 public class MapReduceMain {
 
-    private static final String STORYTELLER_FUNCTION_ID = "6a2d8863-e96e-4d00-82b7-cc35ae390044";
-//    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc"; // Java
+    private static final String STORYTELLER_FUNCTION_ID = "6a2d8863-e96e-4d00-82b7-cc35ae390044"; // Java
+    //    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc"; // Java
     private static final String MAP_FUNCTION_ID = "34cd23c4-f473-4010-a26e-69f56e6f3f83"; // Python
-//    private static final String REDUCE_FUNCTION_ID = "e2497481-a342-40a3-9ece-24e88f5888f1"; // Java
+    //    private static final String REDUCE_FUNCTION_ID = "e2497481-a342-40a3-9ece-24e88f5888f1"; // Java
     private static final String REDUCE_FUNCTION_ID = "e71fd934-fac4-4785-980c-6f0c0b79ec9a"; // Mono
 
     private ExecutorService executorService;
@@ -47,57 +51,89 @@ public class MapReduceMain {
      * @param tasks
      */
     private void run(List<TaskDTO> tasks) {
-        List<TaskDTO> mapperTasks = new ArrayList<>();
-        List<TaskDTO> reducerTasks = new ArrayList<>();
-        Collection<Callable<TaskResult>> storytellerRunnables = new ArrayList<>();
-        Collection<Callable<TaskResult>> mapperRunnables = new ArrayList<>();
+        int numberReducers = 3;
+
+        Collection<Callable<List<String[]>>> appTasks = new ArrayList<>();
         Collection<Callable<TaskResult>> reducerRunnables = new ArrayList<>();
 
+
         // Provide a list with runnable StoryTellers
-        tasks.forEach(taskDTO -> storytellerRunnables.add(() -> dispatcherClient.runTask(taskDTO)));
+        tasks.forEach(appTask -> appTasks.add(() -> {
+                    // This is a capsule of a task and a mapper that would run on one node
+
+                    // First run the application task
+                    TaskResult taskResult = dispatcherClient.runTask(appTask);
+                    if (taskResult.getState().equals(TaskState.ERROR)) {
+                        return null;
+                    }
+
+                    // Then run the mapper task on the app task result
+                    TaskDTO mapperTask = createMapTask(persistenceHandler.readResult(programId, jobId, appTask.getId()));
+                    taskResult = dispatcherClient.runTask(mapperTask);
+                    if (taskResult.getState().equals(TaskState.ERROR)) {
+                        return null;
+                    }
+
+                    // Then partition the map output
+                    TuplePartitioner partitioner = new TuplePartitioner(new HashPartitioner(), numberReducers);
+                    partitioner.partition(mapperTask);
+
+                    // Save all partitions
+                    List<String[]> partitions = new ArrayList<>();
+                    partitioner.getPartitions().forEach(partition -> {
+                        String partitionKey = UUID.randomUUID().toString();
+                        String[] keys = {appTask.getId(), partitionKey};
+                        partitions.add(keys);
+                        try {
+                            persistenceHandler.writeData(programId, jobId, appTask.getId(), partitionKey, partition.toString());
+                        } catch (ResourceAccessException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+                    return partitions;
+                }
+        ));
 
         try {
-            // Run all storytellers
-            executorService.invokeAll(storytellerRunnables);
+            // Run all app tasks and mappers
+            Collection<Future<List<String[]>>> reduceResources = executorService.invokeAll(appTasks);
 
-            // Run all mappers
+            // Create reducers
+            for (int i = 0; i < numberReducers; i++) {
+                final int finalI = i;
 
-            tasks.forEach(taskDTO -> {
-                try {
-                    String story = persistenceHandler.readResult(programId, jobId, taskDTO.getId());
-                    TaskDTO task = createMapTask(story);
-                    mapperTasks.add(task);
-                    mapperRunnables.add(() -> dispatcherClient.runTask(task));
+                // This block is run in the reducer thread
+                reducerRunnables.add(() -> {
 
-                } catch (ResourceAccessException | ResourceNotExistsException e) {
-                    e.printStackTrace();
-                }
-            });
+                    // Merge all data
+                    JsonArray resources = new JsonArray();
+                    reduceResources.forEach(partitions -> {
+                        try {
+                            String[] keys = partitions.get().get(finalI);
+                            String partition = persistenceHandler.readResource(programId, jobId, keys[0], keys[1]);
+                            JsonArray tuples = DEFTypeConverter.convert(partition, JsonArray.class);
 
-            executorService.invokeAll(mapperRunnables);
+                            tuples.forEach(resources::add);
 
+                        } catch (InterruptedException | ExecutionException | ResourceNotExistsException | ResourceAccessException e) {
+                            e.printStackTrace();
+                        }
+                    });
 
-            // Shuffle the map output
-            Shuffler shuffler = new Shuffler(3);
-            mapperTasks.forEach(taskDTO -> {
-                try {
-                    shuffler.shuffle(taskDTO);
-                } catch (ResourceNotExistsException | ResourceAccessException e) {
-                    e.printStackTrace();
-                }
-            });
+                    // Create the task and run it
+                    TaskDTO task = createReduceTask(resources.toString());
+                    TaskResult result = dispatcherClient.runTask(task);
 
-            shuffler.getShuffled().forEach(shuffledTupleList -> {
-                String converted = DEFTypeConverter.convert(shuffledTupleList);
-                TaskDTO task = createReduceTask(converted);
-                reducerTasks.add(task);
-                reducerRunnables.add(() -> dispatcherClient.runTask(task));
-            });
+                    // Print the output
+                    printResult(task);
+
+                    return result;
+                });
+            }
 
             // Start the reducers
             executorService.invokeAll(reducerRunnables);
-
-            reducerTasks.forEach(this::printResult);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -140,9 +176,9 @@ public class MapReduceMain {
         return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, MAP_FUNCTION_ID, inParameters, "");
     }
 
-    private TaskDTO createReduceTask(String tupples) {
+    private TaskDTO createReduceTask(String tuples) {
         List<String> inParameters = new ArrayList<>();
-        inParameters.add(tupples);
+        inParameters.add(tuples);
 
         return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, REDUCE_FUNCTION_ID, inParameters, "");
     }
