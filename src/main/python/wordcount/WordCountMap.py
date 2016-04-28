@@ -1,5 +1,4 @@
-from .baselib import BaseLib
-from .TupleList import TupleList
+from baselib import BaseLib
 
 class WordCountMap(BaseLib):
     """
@@ -14,7 +13,4 @@ class WordCountMap(BaseLib):
         for word in text.split(' '):
             words.append([word, 1])
 
-        list = TupleList(words)
-
-        self.set_result(list)
-        self.exec_lib("")
+        self.set_result(words)

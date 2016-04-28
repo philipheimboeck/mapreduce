@@ -6,7 +6,7 @@ import at.enfilo.def.prototype1.commons.PersistenceHandlerFactory;
 import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
 import at.enfilo.def.prototype1.commons.exceptions.ResourceNotExistsException;
 import at.enfilo.def.prototype1.commons.remote.TaskDTO;
-import at.phe.def.mapreduce.demo.TupleList;
+import com.google.gson.JsonArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.List;
 public class Shuffler {
 
     protected int numberReducers = 0;
-    protected List<TupleList> shuffled = new ArrayList<>();
+    protected List<JsonArray> shuffled = new ArrayList<>();
 
     protected PersistenceHandler persistenceHandler = PersistenceHandlerFactory.getPersistenceHandler();
 
@@ -26,7 +26,7 @@ public class Shuffler {
         this.numberReducers = numberReducers;
 
         for (int i = 0; i < numberReducers; i++) {
-            shuffled.add(new TupleList());
+            shuffled.add(new JsonArray());
         }
     }
 
@@ -35,22 +35,23 @@ public class Shuffler {
         String taskResult = persistenceHandler.readResult(taskDTO.getProgramId(), taskDTO.getJobId(), taskDTO.getId());
 
         // Convert the task result into the tuples
-        TupleList mapResult = DEFTypeConverter.convert(taskResult, TupleList.class);
+        JsonArray mapResult = DEFTypeConverter.convert(taskResult, JsonArray.class);
 
         // Sort the mapResult // TODO Put it to the mapper
         // mapResult.getTuples().sort((a, b) -> a.value1.compareTo(b.value1));
 
         // Shuffle the results
-        mapResult.getTuples().forEach(tuple -> {
-
+        mapResult.forEach(tuple -> {
+            // The tuple is another array
+            JsonArray data = tuple.getAsJsonArray();
             // Choose always the same reducer for the same key
-            int hash = Math.abs(tuple.value1.hashCode());
+            int hash = Math.abs(data.get(0).hashCode());
             int chosenReducer = hash % numberReducers;
-            shuffled.get(chosenReducer).getTuples().add(tuple);
+            shuffled.get(chosenReducer).add(data);
         });
     }
 
-    public List<TupleList> getShuffled() {
+    public List<JsonArray> getShuffled() {
         return shuffled;
     }
 }
