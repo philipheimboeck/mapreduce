@@ -28,9 +28,9 @@ import java.util.concurrent.*;
 public class MapReduceMain {
 
     private static final String STORYTELLER_FUNCTION_ID = "6a2d8863-e96e-4d00-82b7-cc35ae390044"; // Java
-    //    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc"; // Java
-    private static final String MAP_FUNCTION_ID = "34cd23c4-f473-4010-a26e-69f56e6f3f83"; // Python
-    //    private static final String REDUCE_FUNCTION_ID = "e2497481-a342-40a3-9ece-24e88f5888f1"; // Java
+    private static final String MAP_FUNCTION_ID = "b3499b28-cffa-4668-b974-311e8e767ecc"; // Java
+//    private static final String MAP_FUNCTION_ID = "34cd23c4-f473-4010-a26e-69f56e6f3f83"; // Python
+//        private static final String REDUCE_FUNCTION_ID = "e2497481-a342-40a3-9ece-24e88f5888f1"; // Java
     private static final String REDUCE_FUNCTION_ID = "e71fd934-fac4-4785-980c-6f0c0b79ec9a"; // Mono
 
     private ExecutorService executorService;
@@ -67,8 +67,14 @@ public class MapReduceMain {
                         return null;
                     }
 
+                    // Todo: Get rid of this step
+                    // Move task result to global program parameters
+                    String taskResultData = persistenceHandler.readResult(programId, jobId, appTask.getId());
+                    String taskResultResource = UUID.randomUUID().toString();
+                    persistenceHandler.writeResource(programId, taskResultResource, taskResultData);
+
                     // Then run the mapper task on the app task result
-                    TaskDTO mapperTask = createMapTask(persistenceHandler.readResult(programId, jobId, appTask.getId()));
+                    TaskDTO mapperTask = createMapTask(taskResultResource);
                     taskResult = dispatcherClient.runTask(mapperTask);
                     if (taskResult.getState().equals(TaskState.ERROR)) {
                         return null;
@@ -85,7 +91,7 @@ public class MapReduceMain {
                         String[] keys = {appTask.getId(), partitionKey};
                         partitions.add(keys);
                         try {
-                            persistenceHandler.writeData(programId, jobId, appTask.getId(), partitionKey, partition.toString());
+                            persistenceHandler.writeResource(programId, jobId, appTask.getId(), partitionKey, partition.toString());
                         } catch (ResourceAccessException e) {
                             e.printStackTrace();
                         }
@@ -97,7 +103,7 @@ public class MapReduceMain {
 
         try {
             // Run all app tasks and mappers
-            Collection<Future<List<String[]>>> reduceResources = executorService.invokeAll(appTasks);
+            final Collection<Future<List<String[]>>> reduceResources = executorService.invokeAll(appTasks);
 
             // Create reducers
             for (int i = 0; i < numberReducers; i++) {
@@ -106,9 +112,9 @@ public class MapReduceMain {
                 // This block is run in the reducer thread
                 reducerRunnables.add(() -> {
 
-                    // Merge all data
+                    // Merge all partitions that belong together
                     JsonArray resources = new JsonArray();
-                    reduceResources.forEach(partitions -> {
+                    for(Future<List<String[]>> partitions : reduceResources) {
                         try {
                             String[] keys = partitions.get().get(finalI);
                             String partition = persistenceHandler.readResource(programId, jobId, keys[0], keys[1]);
@@ -119,10 +125,16 @@ public class MapReduceMain {
                         } catch (InterruptedException | ExecutionException | ResourceNotExistsException | ResourceAccessException e) {
                             e.printStackTrace();
                         }
-                    });
+                    }
 
-                    // Create the task and run it
-                    TaskDTO task = createReduceTask(resources.toString());
+                    // Create the task
+                    String dataReference = UUID.randomUUID().toString();
+                    TaskDTO task = createReduceTask(dataReference);
+
+                    // Save the merged partitions so that we submit only the reference to the reduce library
+                    persistenceHandler.writeResource(programId, dataReference, resources.toString());
+
+                    // RUn the task
                     TaskResult result = dispatcherClient.runTask(task);
 
                     // Print the output
@@ -159,7 +171,7 @@ public class MapReduceMain {
 
         List<TaskDTO> tasks = new ArrayList<>();
         List<String> inParameters = new ArrayList<>();
-        inParameters.add("10"); // Number of sentences
+        inParameters.add("1000"); // Number of sentences
 
         // Create tasks
         for (int i = 0; i < numberTasks; i++) {
@@ -169,16 +181,16 @@ public class MapReduceMain {
         return tasks;
     }
 
-    private TaskDTO createMapTask(String text) {
+    private TaskDTO createMapTask(String reference) {
         List<String> inParameters = new ArrayList<>();
-        inParameters.add(text);
+        inParameters.add(reference);
 
         return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, MAP_FUNCTION_ID, inParameters, "");
     }
 
-    private TaskDTO createReduceTask(String tuples) {
+    private TaskDTO createReduceTask(String reference) {
         List<String> inParameters = new ArrayList<>();
-        inParameters.add(tuples);
+        inParameters.add(reference);
 
         return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, REDUCE_FUNCTION_ID, inParameters, "");
     }
