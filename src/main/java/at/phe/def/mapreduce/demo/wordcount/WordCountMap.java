@@ -1,8 +1,10 @@
 package at.phe.def.mapreduce.demo.wordcount;
 
 
+import at.phe.def.mapreduce.base.MapJavaBaseLibraryFunction;
 import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonPrimitive;
 
 import java.util.List;
 
@@ -10,21 +12,14 @@ import java.util.List;
  * Author: Philip Heimböck
  * Date: 21.04.16.
  */
-public class WordCountMap extends JavaBaseLibraryFunction {
+public class WordCountMap extends MapJavaBaseLibraryFunction<JsonPrimitive, JsonPrimitive> {
 
     @Override
-    public void run(List<String> parameters) throws Exception {
+    protected void runMap(List<String> parameters) {
         String text = parameters.get(0);
 
-        JsonArray result = new JsonArray();
-
         for (String word : text.split(" ")) {
-            JsonArray tuple = new JsonArray();
-            tuple.add(word);
-            tuple.add(1);
-            result.add(tuple);
+            emit(new JsonPrimitive(word.toLowerCase()), new JsonPrimitive(1));
         }
-
-        setResult(result);
     }
 }
