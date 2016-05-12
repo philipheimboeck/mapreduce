@@ -43,7 +43,7 @@ public class MapReduceMain {
      * @param tasks
      */
     private void run(List<TaskDTO> tasks, int numberReducers) {
-        Collection<Callable<List<String[]>>> appTaskCallables = new ArrayList<>();
+        Collection<Callable<List<String>>> appTaskCallables = new ArrayList<>();
         Collection<Callable<ReduceTaskDTO>> reducerCallables = new ArrayList<>();
 
         // Provide a list with runnable StoryTellers
@@ -51,7 +51,7 @@ public class MapReduceMain {
 
         try {
             // Run all app tasks and mappers and get the references of their output
-            final Collection<Future<List<String[]>>> partitionReferences = executorService.invokeAll(appTaskCallables);
+            final Collection<Future<List<String>>> partitionReferences = executorService.invokeAll(appTaskCallables);
 
             // Create reducers
             for (int i = 0; i < numberReducers; i++) {
@@ -100,29 +100,17 @@ public class MapReduceMain {
         return tasks;
     }
 
-    private TaskDTO createMapTask(String reference) {
-        List<String> inParameters = new ArrayList<>();
-        inParameters.add(reference);
-
-        return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, MAP_FUNCTION_ID, inParameters, "");
-    }
-
     private MapTaskDTO createMapTaskDTO(TaskDTO appTask, int numberReducers) {
-        return new MapTaskDTO(appTask, createMapTask(UUID.randomUUID().toString()), numberReducers);
+        return new MapTaskDTO(appTask, MAP_FUNCTION_ID, numberReducers);
     }
 
-    private TaskDTO createReduceTask(String reference) {
-        List<String> inParameters = new ArrayList<>();
-        inParameters.add(reference);
 
-        return new TaskDTO(UUID.randomUUID().toString(), programId, jobId, REDUCE_FUNCTION_ID, inParameters, "");
-    }
 
-    private ReduceTaskDTO createReduceTaskDTO(Collection<Future<List<String[]>>> partitionReferences, int partitionNumber) {
-        List<String[]> taskReferences = new ArrayList<>();
+    private ReduceTaskDTO createReduceTaskDTO(Collection<Future<List<String>>> partitionReferences, int partitionNumber) {
+        List<String> taskReferences = new ArrayList<>();
 
         // Get all references for this reduce task
-        for (Future<List<String[]>> partitions : partitionReferences) {
+        for (Future<List<String>> partitions : partitionReferences) {
             try {
                 taskReferences.add(partitions.get().get(partitionNumber));
             } catch (InterruptedException | ExecutionException e) {
@@ -130,7 +118,7 @@ public class MapReduceMain {
             }
         }
 
-        return new ReduceTaskDTO(createReduceTask(UUID.randomUUID().toString()), taskReferences);
+        return new ReduceTaskDTO(programId, jobId, REDUCE_FUNCTION_ID, taskReferences);
     }
 
 

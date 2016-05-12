@@ -1,11 +1,5 @@
 package at.phe.def.mapreduce;
 
-import at.enfilo.def.prototype1.commons.DEFTypeConverter;
-import at.enfilo.def.prototype1.commons.PersistenceHandler;
-import at.enfilo.def.prototype1.commons.PersistenceHandlerFactory;
-import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
-import at.enfilo.def.prototype1.commons.exceptions.ResourceNotExistsException;
-import at.enfilo.def.prototype1.commons.remote.TaskDTO;
 import at.phe.def.mapreduce.partitioner.IPartitioner;
 import com.google.gson.JsonArray;
 
@@ -22,8 +16,6 @@ public class TuplePartitioner {
     protected List<JsonArray> partitions = new ArrayList<>();
     protected IPartitioner partitioner;
 
-    protected PersistenceHandler persistenceHandler = PersistenceHandlerFactory.getPersistenceHandler();
-
     public TuplePartitioner(IPartitioner partitioner, int numberReducers) {
         this.partitioner = partitioner;
         this.numberReducers = numberReducers;
@@ -33,15 +25,9 @@ public class TuplePartitioner {
         }
     }
 
-    public void partition(TaskDTO taskDTO) throws ResourceNotExistsException, ResourceAccessException {
-
-        String taskResult = persistenceHandler.readResult(taskDTO.getProgramId(), taskDTO.getJobId(), taskDTO.getId());
-
-        // Convert the task result into the tuples
-        JsonArray mapResult = DEFTypeConverter.convert(taskResult, JsonArray.class);
-
-        // Shuffle the results
-        mapResult.forEach(tuple -> {
+    public void partition(JsonArray input) {
+        // Partition the input
+        input.forEach(tuple -> {
             // The tuple is another array
             JsonArray data = tuple.getAsJsonArray();
 
