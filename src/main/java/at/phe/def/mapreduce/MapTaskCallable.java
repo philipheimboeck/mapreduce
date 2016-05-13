@@ -19,7 +19,7 @@ import java.util.concurrent.Callable;
  * Author: Philip Heimböck
  * Date: 06.05.16.
  */
-public class MapTaskCallable implements Callable<List<String>> {
+public class MapTaskCallable implements Callable<TaskResult> {
 
     protected DispatcherClient dispatcherClient = DispatcherClient.getInstance();
     protected PersistenceHandler persistenceHandler = PersistenceHandlerFactory.getPersistenceHandler();
@@ -31,13 +31,13 @@ public class MapTaskCallable implements Callable<List<String>> {
     }
 
     @Override
-    public List<String> call() throws Exception {
+    public TaskResult call() throws Exception {
         // This is a capsule of a task and a mapper that would run on one node
 
         // First run the application task
         TaskResult taskResult = dispatcherClient.runTask(task.getAppTask());
         if (taskResult.getState().equals(TaskState.ERROR)) {
-            return null;
+            return taskResult;
         }
 
         // Todo: Get rid of this step to spare one copy
@@ -47,14 +47,6 @@ public class MapTaskCallable implements Callable<List<String>> {
         persistenceHandler.writeResource(task.getAppTask().getProgramId(), task.getAppTask().getJobId(), mapInputReference, taskResultData);
 
         // Then run the mapper task on the app task result
-        taskResult = dispatcherClient.runTask(task.getMapTask());
-        if (taskResult.getState().equals(TaskState.ERROR)) {
-            return null;
-        }
-
-        // Get the result and return the partition keys
-        String mapResult = persistenceHandler.readResult(task.getMapTask().getProgramId(), task.getMapTask().getJobId(), task.getMapTask().getId());
-
-        return DEFTypeConverter.<ArrayList<String>>convert(mapResult, new TypeToken<ArrayList<String>>(){}.getType());
+        return dispatcherClient.runTask(task.getMapTask());
     }
 }

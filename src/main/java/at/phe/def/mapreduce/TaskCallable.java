@@ -1,5 +1,7 @@
 package at.phe.def.mapreduce;
 
+import at.enfilo.def.prototype1.commons.structs.TaskResult;
+import at.enfilo.def.prototype1.domain.Task;
 import at.enfilo.def.prototype1.workermodule.DispatcherClient;
 
 import java.util.concurrent.Callable;
@@ -8,21 +10,18 @@ import java.util.concurrent.Callable;
  * Author: Philip Heimböck
  * Date: 06.05.16.
  */
-public class ReduceTaskCallable implements Callable<ReduceTaskDTO> {
+public class TaskCallable implements Callable<TaskResult> {
 
     protected DispatcherClient dispatcherClient = DispatcherClient.getInstance();
-    protected ReduceTaskDTO task;
+    protected Task task;
 
-    public ReduceTaskCallable(ReduceTaskDTO task) {
+    public TaskCallable(Task task) {
         this.task = task;
     }
 
     @Override
-    public ReduceTaskDTO call() throws Exception {
-
+    public TaskResult call() throws Exception {
         // Run the task
-        dispatcherClient.runTask(task.task);
-
-        return task;
+        return dispatcherClient.runTask(task.getDTO());
     }
 }

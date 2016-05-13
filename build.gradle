@@ -11,6 +11,7 @@ repositories {
 dependencies {
 
     compile project(':DEF-Commons')
+    compile project(':DEF-Domain')
     compile project(':DEF-WorkerModule')
     compile project(':DEF-WorkerAPI')
 
