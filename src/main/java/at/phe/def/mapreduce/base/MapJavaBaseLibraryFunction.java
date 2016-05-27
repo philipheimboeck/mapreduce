@@ -3,7 +3,6 @@ package at.phe.def.mapreduce.base;
 import at.enfilo.def.prototype1.commons.DEFTypeConverter;
 import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
 import at.phe.def.mapreduce.TuplePartitioner;
-import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
 import at.phe.def.mapreduce.partitioner.HashPartitioner;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;

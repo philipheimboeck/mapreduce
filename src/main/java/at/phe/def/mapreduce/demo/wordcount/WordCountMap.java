@@ -2,8 +2,6 @@ package at.phe.def.mapreduce.demo.wordcount;
 
 
 import at.phe.def.mapreduce.base.MapJavaBaseLibraryFunction;
-import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 
 import java.util.List;

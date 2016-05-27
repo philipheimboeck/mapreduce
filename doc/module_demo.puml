@@ -1,0 +1,82 @@
+@startuml
+
+
+package DEF-Dispatcher {
+
+    interface IJobDispatcher {
+        +submitJob(job : Job) : JobState
+        +terminateJob(job : Job) : void
+        +restartJob(job : Job) : Job
+        +attachTask(job : Job, task : Task) : void
+    }
+
+    class ThreadJobDispatcher
+    IJobDispatcher <|-- ThreadJobDispatcher
+
+    class JPPFAdapter
+    IJobDispatcher <|-- JPPFAdapter
+
+    class JobDispatcherFactory {
+        +{static} createJobDispatcher(taskFactory : ITaskFactory) : IJobDispatcher
+    }
+
+    JobDispatcherFactory .> ThreadJobDispatcher : creates
+    JobDispatcherFactory .> JPPFAdapter : creates
+}
+
+interface IJobController
+interface IProgramManager
+interface ILibraryManager
+
+class JobControllerFactory
+class ProgramManagerFactory
+class LibraryManagerFactory
+
+package DEF-ComputationController {
+    class ResourceManagerFactory
+}
+
+package DEF-Domain {
+    interface ITaskFactory {
+        createTask(job : Job, lib : LibraryFunction, inParameters : List<String>) : Task
+    }
+    class TaskFactory
+    ITaskFactory <|-- TaskFactory
+
+    interface IResourceManager {
+        void register(Resource resource) : void
+        void registerAll(List<? extends Resource> resources) : void
+        void deregister(Resource resource) : void
+        Resource getResourceById(String rId) : Resource
+        SharedResource createSharedResource(Program program) : SharedResource
+        void uploadData(Resource resource, InputStream data) : void
+    }
+
+    class LibraryFunction
+    class Program
+    class Job
+    Job - Program
+    class Task
+
+    class Resource
+    class SharedResource
+}
+
+
+
+package DEF-Demo {
+    class MapReduceMain {
+        +main()
+    }
+
+    MapReduceMain --- IJobDispatcher
+    MapReduceMain --- IResourceManager
+    MapReduceMain --- IJobController
+    MapReduceMain --- IProgramManager
+    MapReduceMain --- ILibraryManager
+    MapReduceMain --- LibraryFunction : applicationTask
+    MapReduceMain --- LibraryFunction : mapTask
+    MapReduceMain --- LibraryFunction : reduceTask
+}
+
+@enduml

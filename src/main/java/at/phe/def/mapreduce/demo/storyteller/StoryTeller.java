@@ -1,12 +1,11 @@
 package at.phe.def.mapreduce.demo.storyteller;
 
 import at.enfilo.def.prototype1.commons.DEFTypeConverter;
-import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
+import at.phe.def.mapreduce.base.JavaBaseLibraryFunction;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

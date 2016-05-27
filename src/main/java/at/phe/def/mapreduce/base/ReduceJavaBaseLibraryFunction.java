@@ -1,12 +1,7 @@
 package at.phe.def.mapreduce.base;
 
 import at.enfilo.def.prototype1.commons.DEFTypeConverter;
-import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
-import at.phe.def.mapreduce.demo.JavaBaseLibraryFunction;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
 import java.util.ArrayList;
 import java.util.Collection;

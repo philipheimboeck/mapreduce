@@ -1,4 +1,4 @@
-package at.phe.def.mapreduce.demo;
+package at.phe.def.mapreduce.base;
 
 import java.util.List;
 

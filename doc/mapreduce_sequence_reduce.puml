@@ -1,0 +1,41 @@
+@startuml
+activate JavaBaseLibraryFunction
+JavaBaseLibraryFunction -> JavaBaseLibraryFunction : setInParameters(inParams : String[])
+JavaBaseLibraryFunction -> ReduceJavaBaseLibraryFunction : run(parameters : List<String>)
+
+activate ReduceJavaBaseLibraryFunction
+
+' Merge partitions
+
+loop for every parameter
+loop for every key
+ReduceJavaBaseLibraryFunction -> ReduceJavaBaseLibraryFunction : mergeValuesByKey(key, values)
+end
+end
+
+' Run reducer function
+
+loop for every key in mergedPartitions
+ReduceJavaBaseLibraryFunction -> WordCountReduce : runReduce(word : String, values : Collection<Integer>)
+
+activate WordCountReduce
+WordCountReduce -> ReduceJavaBaseLibraryFunction : emit(word : String, count(values) : Integer)
+activate ReduceJavaBaseLibraryFunction
+WordCountReduce <-- ReduceJavaBaseLibraryFunction
+deactivate ReduceJavaBaseLibraryFunction
+ReduceJavaBaseLibraryFunction <-- WordCountReduce
+deactivate WordCountReduce
+end
+
+' Set result and return
+
+ReduceJavaBaseLibraryFunction -> JavaBaseLibraryFunction : setResult(result)
+activate JavaBaseLibraryFunction
+ReduceJavaBaseLibraryFunction <-- JavaBaseLibraryFunction
+deactivate JavaBaseLibraryFunction
+
+JavaBaseLibraryFunction <-- ReduceJavaBaseLibraryFunction
+deactivate ReduceJavaBaseLibraryFunction
+
+deactivate JavaBaseLibraryFunction
+@enduml

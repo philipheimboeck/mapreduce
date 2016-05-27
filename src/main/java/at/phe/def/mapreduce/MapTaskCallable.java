@@ -1,18 +1,11 @@
 package at.phe.def.mapreduce;
 
-import at.enfilo.def.prototype1.commons.DEFTypeConverter;
 import at.enfilo.def.prototype1.commons.PersistenceHandler;
 import at.enfilo.def.prototype1.commons.PersistenceHandlerFactory;
-import at.enfilo.def.prototype1.commons.exceptions.ResourceAccessException;
 import at.enfilo.def.prototype1.commons.structs.TaskResult;
 import at.enfilo.def.prototype1.commons.structs.TaskState;
 import at.enfilo.def.prototype1.workermodule.DispatcherClient;
-import at.phe.def.mapreduce.partitioner.HashPartitioner;
-import com.google.gson.reflect.TypeToken;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 
 /**

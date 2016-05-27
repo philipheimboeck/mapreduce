@@ -1,0 +1,166 @@
+@startuml
+
+interface ICallable<T> {
+    +call() : T
+}
+
+package DEF-Commons {
+    namespace at.enfilo.def.prototype1.commons {
+        class PersistenceHandler {
+            + {abstract} writeResource(pId : String, jId : String, key : String, value : String) : void
+            + {abstract} readResource(pId : String, jId : String, key : String) : String
+        }
+
+        namespace remote {
+            class TaskDTO {
+                -programId : String
+                -jobId : String
+                -libFunctionId : String
+                -id : String
+                -inParameters : List<String>
+            }
+        }
+
+        namespace structs {
+            enum JobState {
+                READY
+                SCHEDULED
+                RUN
+                SUCCESS
+                ERROR
+            }
+        }
+    }
+}
+
+package DEF-Domain {
+    namespace at.enfilo.def.prototype1.domain {
+        class Task
+    }
+}
+
+package DEF-WorkerAPI {
+    namespace at.enfilo.def.prototype1.workerapi {
+        abstract class JavaBaseLibraryFunction {
+            #inParameters : List<String>
+            +getResult() : String
+            +{abstract} run() : void
+            +{static} main(args : String[]) : void
+            #setResult(result : <T>)
+            #writeJobResource(value : <T>, resource : String) : void
+        }
+
+        JavaBaseLibraryFunction -> at.enfilo.def.prototype1.commons.PersistenceHandler : persistenceHandler
+    }
+}
+
+package DEF-WorkerModule {
+    namespace at.enfilo.def.prototype1.workermodule {
+        class DispatcherClient {
+            +runTask(task : TaskDTO) : TaskResult
+        }
+    }
+}
+
+package DEF-MapReduce {
+    namespace at.phe.def.mapreduce {
+
+        namespace base {
+            abstract class MapJavaBaseLibraryFunction<Key, Value> {
+                #result : JsonArray
+                #numberPartitions : int
+                +run(parameters : List<String>) : void
+                #emit(key : Key, value : Value) : void
+                #partition(value : JsonArray) : List<JsonArray>
+                #writePartition(partition : JsonArray) : String
+                #{abstract} runMap(parameters : List<String>) : void
+            }
+
+            abstract class ReduceJavaBaseLibraryFunction<Key, Value, KeyOut, ValueOut> {
+                #result : HashMap<KeyOut, ValueOut>
+                +ReduceJavaBaseLibraryFunction(keyClass : Class<Key>, valueClass : Class<Value>)
+                +run(parameters : List<String>) : void
+                #emit(key : KeyOut, value : ValueOut) : void
+                #{abstract} runReduce(key : Key, values : Collection<Value>) : void
+            }
+
+            abstract class JavaBaseLibraryFunction {
+                +run() : void
+                +{abstract} run(parameters : List<String>) : void
+            }
+
+            JavaBaseLibraryFunction <|-- MapJavaBaseLibraryFunction
+            JavaBaseLibraryFunction <|-- ReduceJavaBaseLibraryFunction
+            at.enfilo.def.prototype1.workerapi.JavaBaseLibraryFunction <|-- JavaBaseLibraryFunction
+        }
+
+        namespace demo {
+            namespace storyteller {
+                class StoryTeller {
+                    -getRandomSentence() : String
+                    +run(parameters : List<String>) : void
+                }
+                at.phe.def.mapreduce.base.JavaBaseLibraryFunction <|-- StoryTeller
+            }
+
+            namespace wordcount {
+                class WordCountMap<JsonPrimitive, JsonPrimitive> {
+                    #runMap(parameters : List<String>) : void
+                }
+                class WordCountReducer<String, Integer, String, Integer> {
+                    #runReduce(key : String, integers : Collection<Integer>) : void
+                }
+
+                at.phe.def.mapreduce.base.MapJavaBaseLibraryFunction <|-- WordCountMap
+                at.phe.def.mapreduce.base.ReduceJavaBaseLibraryFunction <|-- WordCountReducer
+            }
+        }
+
+        namespace partitioner {
+            interface IPartitioner {
+                partition(key : Object, nrPartitions : int) : int
+            }
+            class HashPartitioner
+
+            IPartitioner <|-- HashPartitioner
+        }
+
+        class MapTaskCallable<TaskResult>
+        class TaskCallable<TaskResult>
+
+        class MapTaskDTO {
+            -id : String
+        }
+
+        class PartitionHelper {
+            +{static} getPartitionReferences(programId : String, jobId : String, taskId : String) : List<String>
+        }
+        class TuplePartitioner {
+            #numberReducers : int
+            #partitions : List<JsonArray>
+            +TuplePartitioner(partitioner : IPartitioner, numberReducers : int)
+            +partition(input : JsonArray) : void
+            +getPartitions() : List<JsonArray>
+        }
+
+        at.phe.def.mapreduce.base.MapJavaBaseLibraryFunction -> TuplePartitioner : partitioner
+
+        at.phe.def.mapreduce.partitioner.IPartitioner <- TuplePartitioner : partitioner
+
+        .ICallable <|-- MapTaskCallable
+        .ICallable <|-- TaskCallable
+
+
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <- MapTaskCallable : dispatcher
+        at.enfilo.def.prototype1.commons.PersistenceHandler <- MapTaskCallable : persistenceHandler
+
+        at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : appTask
+        at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : mapTask
+        MapTaskDTO <- MapTaskCallable : task
+
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <- TaskCallable : dispatcher
+        at.enfilo.def.prototype1.domain.Task <- TaskCallable : task
+    }
+}
+
+@enduml

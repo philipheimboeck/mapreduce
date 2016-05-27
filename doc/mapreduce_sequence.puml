@@ -1,0 +1,91 @@
+@startuml
+activate MapReduceMain
+
+MapReduceMain -> ThreadJobDispatcher : submitJob(job : Job)
+activate ThreadJobDispatcher
+
+ThreadJobDispatcher -> ThreadJobDispatcher : runMapReduceTasks(job : Job)
+activate ThreadJobDispatcher
+
+' Creating appMapTasks
+
+loop int i = 0; i < job.tasks.size(); i++
+ThreadJobDispatcher -> ThreadJobDispatcher : createMapTaskDTO(task : Task)
+create MapTaskCallable
+ThreadJobDispatcher -> MapTaskCallable : new(mapTaskDTO : MapTaskDTO)
+end
+
+' Running app and map
+
+ThreadJobDispatcher -> ExecutorService : invokeAll(mapTaskCallables : MapTaskCallable)
+activate ExecutorService
+ExecutorService -> MapTaskCallable : call()
+activate MapTaskCallable
+MapTaskCallable -> DispatcherClient : runTask(appTask : TaskDTO)
+activate DispatcherClient
+DispatcherClient ->] : invoke()
+...
+DispatcherClient <--] : result : TaskResult
+MapTaskCallable <-- DispatcherClient : result : TaskResult
+deactivate DispatcherClient
+
+group copy application results to map input
+    MapTaskCallable -> PersistenceHandler : readResult(appTask.id : String)
+    MapTaskCallable <-- PersistenceHandler : taskResult : String
+    MapTaskCallable -> PersistenceHandler : writeResource(mapTask.parameters[1] : String, taskResult : String)
+    MapTaskCallable <-- PersistenceHandler
+end
+
+MapTaskCallable -> DispatcherClient : runTask(mapTask : TaskDTO)
+activate DispatcherClient
+DispatcherClient ->] : invoke()
+...
+DispatcherClient <--] : result : TaskResult
+MapTaskCallable <-- DispatcherClient : result : TaskResult
+deactivate DispatcherClient
+
+MapTaskCallable --> ExecutorService : result : TaskResult
+deactivate MapTaskCallable
+ThreadJobDispatcher <-- ExecutorService : mapResults : Collection<Future<TaskResult>>
+deactivate ExecutorService
+
+' Creating reducers
+
+loop int i = 0; i < mapResults; i++
+ThreadJobDispatcher -> PartitionHelper : getPartitions(mapResults(i).taskId : String)
+ThreadJobDispatcher <-- PartitionHelper : partitions : List<String>
+end
+
+loop int i = 0; i < numberReducers; i++
+ThreadJobDispatcher -> ITaskFactory : createTask(job : Job, reduceLibraryFunction : LibraryFunction, inputArray : List<String>)
+ThreadJobDispatcher <-- ITaskFactory : reduceTask : Task
+create TaskCallable
+ThreadJobDispatcher -> TaskCallable : new(reduceTask : Task)
+end
+
+' Running reducers
+
+ThreadJobDispatcher -> ExecutorService : invokeAll(reduceCallables : TaskCallable)
+activate ExecutorService
+ExecutorService -> TaskCallable : call()
+activate TaskCallable
+TaskCallable -> DispatcherClient : runTask(reduceTask : TaskDTO)
+activate DispatcherClient
+DispatcherClient ->] : invoke()
+...
+DispatcherClient <--] : result : TaskResult
+TaskCallable <-- DispatcherClient : result : TaskResult
+deactivate DispatcherClient
+
+TaskCallable --> ExecutorService : result : TaskResult
+deactivate TaskCallable
+ThreadJobDispatcher <-- ExecutorService : reduceResults : Collection<Future<TaskResult>>
+deactivate ExecutorService
+
+ThreadJobDispatcher -> ExecutorService : shutdown()
+deactivate ThreadJobDispatcher
+MapReduceMain <-- ThreadJobDispatcher : result : JobState
+deactivate ThreadJobDispatcher
+
+deactivate MapReduceMain
+@enduml
