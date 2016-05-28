@@ -1,82 +1,155 @@
 @startuml
 
 
+package DEF-Domain {
+    namespace at.enfilo.def.prototype1.manager {
+        interface IResourceManager {
+            +register(resource : Resource) : void
+            +getResourceById(rId : String) : Resource
+        }
+    }
+
+    namespace at.enfilo.def.prototype1.domain {
+        class Task
+
+        class LibraryFunction {
+            - id : String
+            - stdoutParameter : FormalParameter
+            - name : String
+            - pse : PSE
+            - path : String
+            - pseCallOption : String
+            - version : String
+            - versionDate : LocalDate
+            - description : String
+            - inParameters : List<FormalParameter>
+            - outParameters : List<FormalParameter>
+            - returnParameter : FormalParameter
+        }
+        class Program
+        class Job
+        class MapReduceInfo {
+            - int numberReducers
+        }
+        MapReduceInfo -> LibraryFunction : mapLibrary
+        MapReduceInfo -> LibraryFunction : reduceLibrary
+        Job -> Program
+        Job -> MapReduceInfo : mapReduceInfo
+        class Task
+
+        Task -> Job
+    }
+
+    namespace at.enfilo.def.prototype1.factory {
+        interface ITaskFactory {
+            createTask(job : Job, lib : LibraryFunction, inParameters : List<String>) : Task
+        }
+        class TaskFactory {
+            + TaskFactory(resourceManager : IResourceManager)
+        }
+        ITaskFactory <|-- TaskFactory
+
+        TaskFactory -> at.enfilo.def.prototype1.manager.IResourceManager
+        ITaskFactory .> at.enfilo.def.prototype1.domain.Task : creates
+    }
+}
+
+class ExecutorService {
+    +invokeAll(callables : Collection<ICallable>)
+}
+
+interface ICallable {
+    +call()
+}
+
+package DEF-WorkerModule {
+    namespace at.enfilo.def.prototype1.workermodule {
+        class DispatcherClient {
+            +runTask(task : TaskDTO) : TaskResult
+        }
+    }
+}
+
+package DEF-MapReduce {
+    namespace at.phe.def.mapreduce {
+
+        class MapTaskCallable<TaskResult>
+        class TaskCallable<TaskResult>
+
+        class MapTaskDTO {
+            -id : String
+            -appTask : TaskDTO
+            -mapTask : TaskDTO
+            -numberPartitions : int
+        }
+
+        class PartitionHelper {
+            +{static} getPartitionReferences(programId : String, jobId : String, taskId : String) : List<String>
+        }
+
+        .ICallable <|-- MapTaskCallable
+        .ICallable <|-- TaskCallable
+
+
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <- MapTaskCallable : dispatcher
+
+        MapTaskDTO <- MapTaskCallable : task
+
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <- TaskCallable : dispatcher
+        at.enfilo.def.prototype1.domain.Task <- TaskCallable : task
+    }
+}
+
 package DEF-Dispatcher {
 
-    interface IJobDispatcher {
-        +submitJob(job : Job) : JobState
-        +terminateJob(job : Job) : void
-        +restartJob(job : Job) : Job
-        +attachTask(job : Job, task : Task) : void
+    namespace at.enfilo.def.prototype1.dispatcher {
+
+        interface IJobDispatcher {
+            +submitJob(job : Job) : JobState
+            +terminateJob(job : Job) : void
+            +restartJob(job : Job) : Job
+            +attachTask(job : Job, task : Task) : void
+        }
+
+        class ThreadJobDispatcher {
+            - runNormalTasks(job : Job) : JobState
+            - runMapReduceTasks(job : Job) : JobState
+            - createMapTaskDTO(mapLibraryFunction : LibraryFunction, appTask : TaskDTO, numberReducers : int) : MapTaskDTO
+            - createReduceTask(job : Job, reduceLibraryFunction : ILibraryFunction, partitionReferences : Collection<List<String>>, partitionNumber : int) : Task
+        }
+        IJobDispatcher <|-- ThreadJobDispatcher
+        ThreadJobDispatcher -> at.enfilo.def.prototype1.factory.ITaskFactory
+        ThreadJobDispatcher -> .ExecutorService : executorService
+        ThreadJobDispatcher ..> at.phe.def.mapreduce.MapTaskDTO : creates
+        ThreadJobDispatcher ..> at.phe.def.mapreduce.TaskCallable : creates
+        ThreadJobDispatcher ..> at.phe.def.mapreduce.MapTaskCallable : creates
+        ThreadJobDispatcher -> at.phe.def.mapreduce.PartitionHelper : partitionHelper
+
+        class JPPFAdapter
+        IJobDispatcher <|-- JPPFAdapter
+
+        class JobDispatcherFactory {
+            +{static} createJobDispatcher(taskFactory : ITaskFactory) : IJobDispatcher
+        }
+
+        JobDispatcherFactory .> ThreadJobDispatcher : creates
+        JobDispatcherFactory .> JPPFAdapter : creates
     }
-
-    class ThreadJobDispatcher
-    IJobDispatcher <|-- ThreadJobDispatcher
-
-    class JPPFAdapter
-    IJobDispatcher <|-- JPPFAdapter
-
-    class JobDispatcherFactory {
-        +{static} createJobDispatcher(taskFactory : ITaskFactory) : IJobDispatcher
-    }
-
-    JobDispatcherFactory .> ThreadJobDispatcher : creates
-    JobDispatcherFactory .> JPPFAdapter : creates
 }
-
-interface IJobController
-interface IProgramManager
-interface ILibraryManager
-
-class JobControllerFactory
-class ProgramManagerFactory
-class LibraryManagerFactory
-
-package DEF-ComputationController {
-    class ResourceManagerFactory
-}
-
-package DEF-Domain {
-    interface ITaskFactory {
-        createTask(job : Job, lib : LibraryFunction, inParameters : List<String>) : Task
-    }
-    class TaskFactory
-    ITaskFactory <|-- TaskFactory
-
-    interface IResourceManager {
-        void register(Resource resource) : void
-        void registerAll(List<? extends Resource> resources) : void
-        void deregister(Resource resource) : void
-        Resource getResourceById(String rId) : Resource
-        SharedResource createSharedResource(Program program) : SharedResource
-        void uploadData(Resource resource, InputStream data) : void
-    }
-
-    class LibraryFunction
-    class Program
-    class Job
-    Job - Program
-    class Task
-
-    class Resource
-    class SharedResource
-}
-
-
 
 package DEF-Demo {
-    class MapReduceMain {
-        +main()
-    }
 
-    MapReduceMain --- IJobDispatcher
-    MapReduceMain --- IResourceManager
-    MapReduceMain --- IJobController
-    MapReduceMain --- IProgramManager
-    MapReduceMain --- ILibraryManager
-    MapReduceMain --- LibraryFunction : applicationTask
-    MapReduceMain --- LibraryFunction : mapTask
-    MapReduceMain --- LibraryFunction : reduceTask
+    namespace at.phe.def.mapreduce.demo {
+        class MapReduceMain {
+            +main()
+        }
+
+        MapReduceMain -> at.enfilo.def.prototype1.dispatcher.IJobDispatcher : dispatcher
+        MapReduceMain -> at.enfilo.def.prototype1.manager.IResourceManager : resourceManager
+        MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : applicationTask
+        MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : mapTask
+        MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : reduceTask
+    }
 }
 
 @enduml
