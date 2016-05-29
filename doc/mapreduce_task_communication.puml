@@ -1,0 +1,55 @@
+@startuml
+
+[-> IJobDispatcher : submitJob(job : Job)
+activate IJobDispatcher
+
+
+IJobDispatcher -> NodeClient1 : execute(tasks : LinkedList<Task>)
+activate NodeClient1
+IJobDispatcher -> NodeClient2 : execute(tasks : LinkedList<Task>)
+activate NodeClient2
+
+NodeClient1 -> DispatcherClient : runTaskSequence(task_sequence)
+activate DispatcherClient
+    loop for every task in tasks
+        DispatcherClient ->] : invoke()
+        ...
+        DispatcherClient <--] : result : TaskResult
+    end
+    NodeClient1 <-- DispatcherClient : result : List<TaskResult>
+
+deactivate DispatcherClient
+
+' Notify
+NodeClient1 -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
+
+
+activate IJobDispatcher
+    IJobDispatcher -> NodeClient2
+deactivate IJobDispatcher
+
+IJobDispatcher <-- NodeClient1 : result : List<TaskResult>
+deactivate NodeClient1
+
+NodeClient2 -> DispatcherClient : runTaskSequence(task_sequence)
+activate DispatcherClient
+    loop for every task in tasks
+        DispatcherClient ->] : invoke()
+        ...
+        DispatcherClient <--] : result : TaskResult
+    end
+    NodeClient2 <-- DispatcherClient : result : List<TaskResult>
+deactivate DispatcherClient
+
+' Notify
+NodeClient2 -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
+activate IJobDispatcher
+deactivate IJobDispatcher
+
+
+IJobDispatcher <-- NodeClient2 : result : List<TaskResult>
+deactivate NodeClient2
+
+[<-- IJobDispatcher : result : JobResult
+deactivate IJobDispatcher
+@enduml

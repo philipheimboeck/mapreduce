@@ -1,0 +1,26 @@
+@startuml
+
+[-> IJobDispatcher : submitJob(job : Job)
+activate IJobDispatcher
+
+loop for each task_sequence in job
+
+    IJobDispatcher -> NodeClient : execute(tasks : LinkedList<Task>)
+    activate NodeClient
+        note right: The NodeClient runs the library on the node itself
+        NodeClient -> DispatcherClient : runTaskSequence(task_sequence)
+        activate DispatcherClient
+            loop for every task in tasks
+                DispatcherClient ->] : invoke()
+                ...
+                DispatcherClient <--] : result : TaskResult
+            end
+            NodeClient <-- DispatcherClient : result : List<TaskResult>
+        deactivate DispatcherClient
+        IJobDispatcher <-- NodeClient : result : List<TaskResult>
+    deactivate NodeClient
+
+end
+[<-- IJobDispatcher : result : JobResult
+deactivate IJobDispatcher
+@enduml
