@@ -1,4 +1,7 @@
 @startuml
+
+!include skin.puml
+
 activate MapReduceMain
 
 MapReduceMain -> ThreadJobDispatcher : submitJob(job : Job)
@@ -29,6 +32,7 @@ DispatcherClient <--] : result : TaskResult
 MapTaskCallable <-- DispatcherClient : result : TaskResult
 deactivate DispatcherClient
 
+
 group copy application results to map input
     MapTaskCallable -> PersistenceHandler : readResult(appTask.id : String)
     MapTaskCallable <-- PersistenceHandler : taskResult : String
@@ -48,6 +52,9 @@ MapTaskCallable --> ExecutorService : result : TaskResult
 deactivate MapTaskCallable
 ThreadJobDispatcher <-- ExecutorService : mapResults : Collection<Future<TaskResult>>
 deactivate ExecutorService
+
+
+newpage
 
 ' Creating reducers
 

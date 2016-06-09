@@ -1,14 +1,12 @@
 @startuml
 
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
+
+'page 1x2
 
 package DEF-Domain {
-    namespace at.enfilo.def.prototype1.manager {
-        interface IResourceManager {
-            +register(resource : Resource) : void
-            +getResourceById(rId : String) : Resource
-        }
-    }
-
     namespace at.enfilo.def.prototype1.domain {
         class Task
 
@@ -31,28 +29,33 @@ package DEF-Domain {
         class MapReduceInfo {
             - int numberReducers
         }
-        MapReduceInfo -> LibraryFunction : mapLibrary
-        MapReduceInfo -> LibraryFunction : reduceLibrary
+        LibraryFunction <-- MapReduceInfo : mapLibrary
+        LibraryFunction <-- MapReduceInfo : reduceLibrary
         Job -> Program
-        Job -> MapReduceInfo : mapReduceInfo
+        Job --> MapReduceInfo : mapReduceInfo
         class Task
 
         Task -> Job
+        Task --> LibraryFunction : library
     }
 
     namespace at.enfilo.def.prototype1.factory {
         interface ITaskFactory {
-            createTask(job : Job, lib : LibraryFunction, inParameters : List<String>) : Task
+            createTask() : Task
         }
         class TaskFactory {
             + TaskFactory(resourceManager : IResourceManager)
         }
-        ITaskFactory <|-- TaskFactory
+        ITaskFactory <|- TaskFactory
 
-        TaskFactory -> at.enfilo.def.prototype1.manager.IResourceManager
         ITaskFactory .> at.enfilo.def.prototype1.domain.Task : creates
     }
 }
+
+newpage
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
 
 class ExecutorService {
     +invokeAll(callables : Collection<ICallable>)
@@ -63,6 +66,7 @@ interface ICallable {
 }
 
 package DEF-WorkerModule {
+
     namespace at.enfilo.def.prototype1.workermodule {
         class DispatcherClient {
             +runTask(task : TaskDTO) : TaskResult
@@ -84,42 +88,41 @@ package DEF-MapReduce {
         }
 
         class PartitionHelper {
-            +{static} getPartitionReferences(programId : String, jobId : String, taskId : String) : List<String>
+            +{static} getPartitionReferences() : List<String>
         }
 
         .ICallable <|-- MapTaskCallable
         .ICallable <|-- TaskCallable
 
 
-        at.enfilo.def.prototype1.workermodule.DispatcherClient <- MapTaskCallable : dispatcher
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <-- MapTaskCallable : dispatcher
 
         MapTaskDTO <- MapTaskCallable : task
 
-        at.enfilo.def.prototype1.workermodule.DispatcherClient <- TaskCallable : dispatcher
+        at.enfilo.def.prototype1.workermodule.DispatcherClient <-- TaskCallable : dispatcher
         at.enfilo.def.prototype1.domain.Task <- TaskCallable : task
     }
 }
 
 package DEF-Dispatcher {
-
     namespace at.enfilo.def.prototype1.dispatcher {
 
         interface IJobDispatcher {
-            +submitJob(job : Job) : JobState
-            +terminateJob(job : Job) : void
-            +restartJob(job : Job) : Job
-            +attachTask(job : Job, task : Task) : void
+            +submitJob() : JobState
+            +terminateJob() : void
+            +restartJob() : Job
+            +attachTask() : void
         }
 
         class ThreadJobDispatcher {
-            - runNormalTasks(job : Job) : JobState
-            - runMapReduceTasks(job : Job) : JobState
-            - createMapTaskDTO(mapLibraryFunction : LibraryFunction, appTask : TaskDTO, numberReducers : int) : MapTaskDTO
-            - createReduceTask(job : Job, reduceLibraryFunction : ILibraryFunction, partitionReferences : Collection<List<String>>, partitionNumber : int) : Task
+            - runNormalTasks() : JobState
+            - runMapReduceTasks() : JobState
+            - createMapTaskDTO() : MapTaskDTO
+            - createReduceTask() : Task
         }
         IJobDispatcher <|-- ThreadJobDispatcher
         ThreadJobDispatcher -> at.enfilo.def.prototype1.factory.ITaskFactory
-        ThreadJobDispatcher -> .ExecutorService : executorService
+        .ExecutorService <- ThreadJobDispatcher : executorService
         ThreadJobDispatcher ..> at.phe.def.mapreduce.MapTaskDTO : creates
         ThreadJobDispatcher ..> at.phe.def.mapreduce.TaskCallable : creates
         ThreadJobDispatcher ..> at.phe.def.mapreduce.MapTaskCallable : creates
@@ -129,23 +132,21 @@ package DEF-Dispatcher {
         IJobDispatcher <|-- JPPFAdapter
 
         class JobDispatcherFactory {
-            +{static} createJobDispatcher(taskFactory : ITaskFactory) : IJobDispatcher
+            +{static} createJobDispatcher() : IJobDispatcher
         }
 
-        JobDispatcherFactory .> ThreadJobDispatcher : creates
-        JobDispatcherFactory .> JPPFAdapter : creates
+        JobDispatcherFactory ..> ThreadJobDispatcher : creates
+        JobDispatcherFactory ..> JPPFAdapter : creates
     }
 }
 
 package DEF-Demo {
-
     namespace at.phe.def.mapreduce.demo {
         class MapReduceMain {
             +main()
         }
 
         MapReduceMain -> at.enfilo.def.prototype1.dispatcher.IJobDispatcher : dispatcher
-        MapReduceMain -> at.enfilo.def.prototype1.manager.IResourceManager : resourceManager
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : applicationTask
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : mapTask
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : reduceTask

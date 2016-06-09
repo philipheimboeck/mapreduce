@@ -1,5 +1,7 @@
 @startuml
 
+!include skin.puml
+
 [-> IJobDispatcher : submitJob(job : Job)
 activate IJobDispatcher
 

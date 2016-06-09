@@ -1,0 +1,47 @@
+@startuml
+
+!include skin.puml
+skinparam shadowing true
+
+cloud {
+    package "Cluster 1" {
+        database "DEF Storage" as db_storage2
+        database "DEF Algo-Lib" as db_algo_lib2
+        [Worker] as Worker11
+        [Worker] as Worker12
+        [Worker] as Worker13
+        [Cluster Module] as ClusterModule1
+        ClusterModule1 --> Worker11
+        ClusterModule1 --> Worker12
+        ClusterModule1 --> Worker13
+        ClusterModule1 ---> db_storage2
+        ClusterModule1 ---> db_algo_lib2
+    }
+
+    package "Cluster 2" {
+        database "DEF Storage" as db_storage3
+        database "DEF Algo-Lib" as db_algo_lib3
+        [Worker] as Worker21
+        [Worker] as Worker22
+        [Worker] as Worker23
+        [Cluster Module] as ClusterModule2
+        ClusterModule2 --> Worker21
+        ClusterModule2 --> Worker22
+        ClusterModule2 --> Worker23
+        ClusterModule2 ---> db_storage3
+        ClusterModule2 ---> db_algo_lib3
+    }
+
+
+    database "DEF Storage" as db_storage
+    database "DEF Algo-Lib" as db_algo_lib
+    [DEF Module] --> db_storage
+    [DEF Module] --> db_algo_lib
+    [DEF Module] ---> ClusterModule1
+    [DEF Module] ---> ClusterModule2
+}
+
+
+[Client] -> [DEF Module] : HTTP Requests
+
+@enduml

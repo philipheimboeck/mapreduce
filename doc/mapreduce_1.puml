@@ -1,4 +1,8 @@
 @startuml
+
+!include skin.puml
+skinparam shadowing true
+
 (*) --> "Create Job"
 --> "Create Tasks"
 --> "Submit Job"
@@ -9,7 +13,7 @@
 "Run Task 1" --> ===T2===
 "Run Task 2" --> ===T2===
 "Run Task n" --> ===T2===
---> "Create Map Jobs"
+--> "Create Map Tasks"
 --> ===M1===
 ===M1=== --> "Run Map 1"
 ===M1=== --> "Run Map 2"

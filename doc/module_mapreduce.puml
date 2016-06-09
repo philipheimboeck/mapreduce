@@ -1,65 +1,13 @@
 @startuml
 
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
+
+'page 2x1
+
 interface ICallable<T> {
     +call() : T
-}
-
-package DEF-Commons {
-    namespace at.enfilo.def.prototype1.commons {
-        class PersistenceHandler {
-            + {abstract} writeResource(pId : String, jId : String, key : String, value : String) : void
-            + {abstract} readResource(pId : String, jId : String, key : String) : String
-        }
-
-        namespace remote {
-            class TaskDTO {
-                -programId : String
-                -jobId : String
-                -libFunctionId : String
-                -id : String
-                -inParameters : List<String>
-            }
-        }
-
-        namespace structs {
-            enum JobState {
-                READY
-                SCHEDULED
-                RUN
-                SUCCESS
-                ERROR
-            }
-        }
-    }
-}
-
-package DEF-Domain {
-    namespace at.enfilo.def.prototype1.domain {
-        class Task
-    }
-}
-
-package DEF-WorkerAPI {
-    namespace at.enfilo.def.prototype1.workerapi {
-        abstract class JavaBaseLibraryFunction {
-            #inParameters : List<String>
-            +getResult() : String
-            +{abstract} run() : void
-            +{static} main(args : String[]) : void
-            #setResult(result : <T>)
-            #writeJobResource(value : <T>, resource : String) : void
-        }
-
-        JavaBaseLibraryFunction -> at.enfilo.def.prototype1.commons.PersistenceHandler : persistenceHandler
-    }
-}
-
-package DEF-WorkerModule {
-    namespace at.enfilo.def.prototype1.workermodule {
-        class DispatcherClient {
-            +runTask(task : TaskDTO) : TaskResult
-        }
-    }
 }
 
 package DEF-MapReduce {
@@ -91,7 +39,6 @@ package DEF-MapReduce {
 
             JavaBaseLibraryFunction <|-- MapJavaBaseLibraryFunction
             JavaBaseLibraryFunction <|-- ReduceJavaBaseLibraryFunction
-            at.enfilo.def.prototype1.workerapi.JavaBaseLibraryFunction <|-- JavaBaseLibraryFunction
         }
 
         namespace demo {
@@ -151,6 +98,94 @@ package DEF-MapReduce {
         .ICallable <|-- MapTaskCallable
         .ICallable <|-- TaskCallable
 
+        MapTaskDTO <- MapTaskCallable : task
+    }
+}
+
+newpage
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
+
+interface ICallable<T> {
+    +call() : T
+}
+
+package DEF-Commons {
+    namespace at.enfilo.def.prototype1.commons {
+        class PersistenceHandler {
+            + {abstract} writeResource(pId : String, jId : String, key : String, value : String) : void
+            + {abstract} readResource(pId : String, jId : String, key : String) : String
+        }
+
+        namespace remote {
+            class TaskDTO {
+                -programId : String
+                -jobId : String
+                -libFunctionId : String
+                -id : String
+                -inParameters : List<String>
+            }
+        }
+    }
+}
+
+
+package DEF-WorkerAPI {
+    namespace at.enfilo.def.prototype1.workerapi {
+        abstract class JavaBaseLibraryFunction {
+            #inParameters : List<String>
+            +getResult() : String
+            +{abstract} run() : void
+            +{static} main(args : String[]) : void
+            #setResult(result : <T>)
+            #writeJobResource(value : <T>, resource : String) : void
+        }
+
+        at.enfilo.def.prototype1.commons.PersistenceHandler <- JavaBaseLibraryFunction : persistenceHandler
+    }
+}
+
+package DEF-WorkerModule {
+    namespace at.enfilo.def.prototype1.workermodule {
+        class DispatcherClient {
+            +runTask(task : TaskDTO) : TaskResult
+        }
+    }
+}
+
+package DEF-Domain {
+    namespace at.enfilo.def.prototype1.domain {
+        class Task
+    }
+}
+
+package DEF-MapReduce {
+    namespace at.phe.def.mapreduce {
+
+        namespace base {
+
+            abstract class JavaBaseLibraryFunction {
+                +run() : void
+                +{abstract} run(parameters : List<String>) : void
+            }
+
+            JavaBaseLibraryFunction <|-- MapJavaBaseLibraryFunction
+            JavaBaseLibraryFunction <|-- ReduceJavaBaseLibraryFunction
+            at.enfilo.def.prototype1.workerapi.JavaBaseLibraryFunction <|-- JavaBaseLibraryFunction
+        }
+
+
+        class MapTaskCallable<TaskResult>
+        class TaskCallable<TaskResult>
+
+        class MapTaskDTO {
+        }
+
+
+        .ICallable <|-- MapTaskCallable
+        .ICallable <|-- TaskCallable
+
 
         at.enfilo.def.prototype1.workermodule.DispatcherClient <- MapTaskCallable : dispatcher
         at.enfilo.def.prototype1.commons.PersistenceHandler <- MapTaskCallable : persistenceHandler
@@ -163,5 +198,6 @@ package DEF-MapReduce {
         at.enfilo.def.prototype1.domain.Task <- TaskCallable : task
     }
 }
+
 
 @enduml

@@ -1,0 +1,101 @@
+@startuml
+
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
+
+'page 2x1
+
+package DEF-Domain {
+
+    namespace at.enfilo.def.prototype1.domain {
+
+        class LibraryFunction {
+            - id : String
+            - stdoutParameter : FormalParameter
+            - name : String
+            - pse : PSE
+            - path : String
+            - pseCallOption : String
+            - version : String
+            - versionDate : LocalDate
+            - description : String
+            - inParameters : List<FormalParameter>
+            - outParameters : List<FormalParameter>
+            - returnParameter : FormalParameter
+        }
+
+        namespace remote {
+            class TaskDTO {
+                -programId : String
+                -jobId : String
+                -libFunctionId : String
+                -id : String
+                -inParameters : List<String>
+            }
+        }
+
+
+        class Program
+        class Job
+        class Task
+
+        Task --> LibraryFunction : library
+
+        Task -> Job
+        Job -> Program
+        Task ..> at.enfilo.def.prototype1.domain.remote.TaskDTO : creates
+    }
+}
+package DEF-LibraryManager {
+    namespace at.enfilo.def.prototype1.lib {
+        interface ILibraryManager {
+            + getLibraryById(id : String) : LibraryFunction
+            + findByName(name : String) : List<LibraryFunction>
+            + register(info : LibraryFunctionDTO, sources : List<InputResource>) : void
+        }
+
+        ILibraryManager .>  at.enfilo.def.prototype1.domain.LibraryFunction : creates
+    }
+}
+
+package DEF-Dispatcher {
+
+    namespace at.enfilo.def.prototype1.dispatcher {
+
+        interface IJobDispatcher {
+            +submitJob(job : Job) : JobState
+            +terminateJob(job : Job) : void
+            +restartJob(job : Job) : Job
+            +attachTask(job : Job, task : Task) : void
+        }
+
+        class JobDispatcherFactory {
+            +{static} createJobDispatcher(taskFactory : ITaskFactory) : IJobDispatcher
+        }
+
+        JobDispatcherFactory ..> IJobDispatcher : creates
+    }
+}
+
+
+package DEF-ComputationController {
+    namespace at.enfilo.def.prototype1.computationcontroller {
+        class JobController {
+            +submitJob(job : Job) : JobState
+            +createJob(program : Program, helperJob : bool) : Job
+            +createTask(Job job, LibraryFunction lib, List<String> inParameters) : Task
+        }
+
+        interface IProgramManager {
+            +createProgram(id : String) : Program
+        }
+
+        JobController ..> at.enfilo.def.prototype1.domain.Job : creates
+        JobController ..> at.enfilo.def.prototype1.domain.Task : creates
+        JobController --> at.enfilo.def.prototype1.dispatcher.IJobDispatcher : jobDispatcher
+        IProgramManager ..> at.enfilo.def.prototype1.domain.Program : creates
+    }
+}
+
+@enduml

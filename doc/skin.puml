@@ -1,0 +1,68 @@
+skinparam defaultFontName Helvetica
+skinparam shadowing false
+
+skinparam Sequence {
+	Arrow {
+		Color     #0099FF
+		FontName  Courier
+		FontSize  12
+		FontColor #000000
+	}
+
+	Box {
+		BorderColor      #F3F3F3
+		BackgroundColor  #F3F3F3
+		FontSize         12
+	}
+
+	Group {
+		BorderColor     #D9D9D9
+		BackgroundColor #D9D9D9
+	}
+
+	LifeLineBorderColor #AAAAAA
+
+	Participant {
+		BackgroundColor #0099FF
+		BorderColor     #0099FF
+		FontColor       #FFFFFF
+		FontSize        12
+	}
+}
+
+skinparam Note {
+    BackgroundColor #D9D9D9
+    BorderColor #A9A9A9
+}
+
+skinparam Activity {
+	Arrow {
+		Color     #494949
+		FontName  Courier
+		FontSize  12
+		FontColor #000000
+	}
+
+    BackgroundColor  #F3F3F3
+    FontSize         12
+    BorderColor     #AAAAAA
+}
+
+skinparam Component {
+    Arrow {
+		Color     #494949
+		FontName  Courier
+		FontSize  12
+		FontColor #000000
+	}
+
+    BackgroundColor  #F3F3F3
+    FontSize         12
+    BorderColor     #AAAAAA
+}
+
+skinparam Database {
+    BackgroundColor  #F3F3F3
+    FontSize         12
+    BorderColor     #AAAAAA
+}

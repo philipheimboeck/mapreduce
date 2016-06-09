@@ -1,4 +1,7 @@
 @startuml
+
+!include skin.puml
+
 activate JavaBaseLibraryFunction
 JavaBaseLibraryFunction -> JavaBaseLibraryFunction : setInParameters(inParams : String[])
 JavaBaseLibraryFunction -> ReduceJavaBaseLibraryFunction : run(parameters : List<String>)

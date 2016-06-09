@@ -1,0 +1,43 @@
+@startuml
+
+skinparam monochrome true
+'skinparam style strictuml
+skinparam linetype polyline
+
+'page 2x1
+
+package DEF-Commons {
+    namespace at.enfilo.def.prototype1.commons {
+        abstract class PersistenceHandler {
+            + {abstract} writeResult(pId : String, jId : String, tId : String, value : String) : void
+            + {abstract} readResult(pId : String, jId : String, tId : String) : String
+        }
+    }
+}
+
+package DEF-WorkerAPI {
+    namespace at.enfilo.def.prototype1.workerapi {
+         abstract class JavaBaseLibraryFunction {
+            #inParameters : List<String>
+            +getResult() : String
+            +{abstract} run() : void
+            +{static} main(args : String[]) : void
+            #setResult(result : <T>)
+            #writeJobResource(value : <T>, resource : String) : void
+        }
+
+        JavaBaseLibraryFunction -> at.enfilo.def.prototype1.commons.PersistenceHandler : persistenceHandler
+    }
+}
+
+package DEF-WorkerModule {
+    namespace at.enfilo.def.prototype1.workermodule {
+        class DispatcherClient {
+            +runTask(task : TaskDTO) : TaskResult
+        }
+
+        DispatcherClient .> at.enfilo.def.prototype1.workerapi.JavaBaseLibraryFunction : invokes
+    }
+}
+
+@enduml

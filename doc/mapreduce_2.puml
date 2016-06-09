@@ -1,4 +1,8 @@
 @startuml
+
+!include skin.puml
+skinparam shadowing true
+
 (*) --> "Create Job"
 --> "Create Tasks"
 --> "Submit Job"
@@ -9,12 +13,12 @@
 "Run Task 1" --> "Run Map 1"
 "Run Task 2" --> "Run Map 2"
 "Run Task n" --> "Run Map n"
-"Run Map 1" --> "Partition 1"
-"Run Map 2" --> "Partition 2"
-"Run Map n" --> "Partition n"
-"Partition 1" --> ===M1===
-"Partition 2" --> ===M1===
-"Partition n" --> ===M1===
+"Run Map 1" --> "Partitions 1..m" as P1
+"Run Map 2" --> "Partitions 1..m" as P2
+"Run Map n" --> "Partitions 1..m" as PN
+P1 --> ===M1===
+P2 --> ===M1===
+PN --> ===M1===
 ===M1=== --> "Shuffle"
 --> ===R1===
 ===R1=== --> "Run Reduce 1"
