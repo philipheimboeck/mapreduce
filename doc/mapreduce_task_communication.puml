@@ -6,51 +6,53 @@
 activate IJobDispatcher
 
 
-IJobDispatcher -> NodeClient1 : execute(tasks : LinkedList<Task>)
-activate NodeClient1
-IJobDispatcher -> NodeClient2 : execute(tasks : LinkedList<Task>)
-activate NodeClient2
+IJobDispatcher -> NodeClientMap : execute(tasks : LinkedList<Task>)
+activate NodeClientMap
+IJobDispatcher -> NodeClientReduce : execute(tasks : LinkedList<Task>)
+activate NodeClientReduce
+hnote over NodeClientReduce : Wait for message
 
-NodeClient1 -> DispatcherClient : runTaskSequence(task_sequence)
+NodeClientMap -> DispatcherClient : runTaskSequence(task_sequence)
 activate DispatcherClient
     loop for every task in tasks
         DispatcherClient ->] : invoke()
         ...
         DispatcherClient <--] : result : TaskResult
     end
-    NodeClient1 <-- DispatcherClient : result : List<TaskResult>
+    NodeClientMap <-- DispatcherClient : result : List<TaskResult>
 
 deactivate DispatcherClient
 
 ' Notify
-NodeClient1 -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
+NodeClientMap -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
 
 
 activate IJobDispatcher
-    IJobDispatcher -> NodeClient2
+    IJobDispatcher -> NodeClientReduce : notifies()
+    hnote over NodeClientReduce : Start working
 deactivate IJobDispatcher
 
-IJobDispatcher <-- NodeClient1 : result : List<TaskResult>
-deactivate NodeClient1
+IJobDispatcher <-- NodeClientMap : result : List<TaskResult>
+deactivate NodeClientMap
 
-NodeClient2 -> DispatcherClient : runTaskSequence(task_sequence)
+NodeClientReduce -> DispatcherClient : runTaskSequence(task_sequence)
 activate DispatcherClient
     loop for every task in tasks
         DispatcherClient ->] : invoke()
         ...
         DispatcherClient <--] : result : TaskResult
     end
-    NodeClient2 <-- DispatcherClient : result : List<TaskResult>
+    NodeClientReduce <-- DispatcherClient : result : List<TaskResult>
 deactivate DispatcherClient
 
 ' Notify
-NodeClient2 -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
+NodeClientReduce -> IJobDispatcher : notifies(taskId : String, result : TaskResult)
 activate IJobDispatcher
 deactivate IJobDispatcher
 
 
-IJobDispatcher <-- NodeClient2 : result : List<TaskResult>
-deactivate NodeClient2
+IJobDispatcher <-- NodeClientReduce : result : List<TaskResult>
+deactivate NodeClientReduce
 
 [<-- IJobDispatcher : result : JobResult
 deactivate IJobDispatcher

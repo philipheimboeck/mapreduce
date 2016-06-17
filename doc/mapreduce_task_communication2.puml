@@ -1,0 +1,23 @@
+@startuml
+
+!include skin.puml
+
+IJobDispatcher -> NodeClient : execute()
+NodeClient -> DispatcherClient : runTaskSequence()
+DispatcherClient -> ReduceTask : invoke()
+activate ReduceTask
+hnote over ReduceTask : Wait for message
+...
+[-> IJobDispatcher : notifies()
+note right: A map task notifies the IJobDispatcher
+IJobDispatcher -> NodeClient : notifies()
+NodeClient -> DispatcherClient : notifies()
+DispatcherClient -> ReduceTask : notifies()
+hnote over ReduceTask : Start working
+...
+DispatcherClient <-- ReduceTask : result
+NodeClient <-- DispatcherClient : result
+IJobDispatcher <-- NodeClient : result
+
+deactivate ReduceTask
+@enduml

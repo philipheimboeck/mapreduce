@@ -3,8 +3,12 @@
 skinparam monochrome true
 'skinparam style strictuml
 skinparam linetype polyline
-
-'page 2x1
+skinparam class {
+    FontSize 13
+    attribute {
+        FontSize 12
+    }
+}
 
 interface ICallable<T> {
     +call() : T
@@ -106,6 +110,12 @@ newpage
 skinparam monochrome true
 'skinparam style strictuml
 skinparam linetype polyline
+skinparam class {
+    FontSize 13
+    attribute {
+        FontSize 12
+    }
+}
 
 interface ICallable<T> {
     +call() : T
