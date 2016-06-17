@@ -31,9 +31,16 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\packages\NLog.4.3.2\lib\net45\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Test.cs" />
+    <Compile Include="VolatilePersistenceHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -46,6 +53,10 @@
     <ProjectReference Include="..\..\..\..\..\..\DEF-WorkerAPI\src\main\dotnet\DefLib\DefLib.csproj">
       <Project>{321C4A3F-DE42-480D-AAD6-92702ECFA030}</Project>
       <Name>DefLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MapReduceBase\MapReduceBase.csproj">
+      <Project>{F944F07E-7E13-4F76-9966-B200CDB479F1}</Project>
+      <Name>MapReduceBase</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

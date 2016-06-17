@@ -1,34 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using DefLib;
+using MapReduceBase;
 
 namespace WordCount
 {
-	public class Reduce : MonoBaseLibraryFunction
+	public class Reduce : ReduceBaseLibrary<string, int, string, int>
 	{
 		#region implemented abstract members of MonoBaseLibraryFunction
 
-		public override void Execute()
+		public override void RunReduce(string key, ICollection<int> values)
 		{
-			// Get tuples
-			var tuples = ConvertToObject<List<List<object>>>((string)InParameters[0]);
-			
-			
 			// Count the tuples
-			var counter = new Dictionary<string, long?>();
-			foreach (var tuple in tuples)
+			int result = 0;
+			foreach (var value in values)
 			{
-				var v1 = tuple[0] as string;
-				var v2 = tuple[1] as long?;
-				if (!counter.ContainsKey(v1))
-				{
-					counter.Add(v1, 0);
-				}
-				counter[v1] = counter[v1] + v2;
+				result += value;
 			}
 
 			// Set the result
-			Result = counter;
+			Emit(key, result);
 		}
 
 		#endregion
