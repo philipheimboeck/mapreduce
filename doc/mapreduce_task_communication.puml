@@ -1,6 +1,11 @@
 @startuml
 
 !include skin.puml
+skinparam Sequence {
+	Participant {
+        FontSize        14
+    }
+}
 
 [-> IJobDispatcher : submitJob(job : Job)
 activate IJobDispatcher
