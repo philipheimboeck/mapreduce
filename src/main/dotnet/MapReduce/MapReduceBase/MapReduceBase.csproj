@@ -40,6 +40,7 @@
     <Compile Include="IPartitioner.cs" />
     <Compile Include="HashPartitioner.cs" />
     <Compile Include="MapBaseLibrary.cs" />
+    <Compile Include="PartitionerBaseLibrary.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
