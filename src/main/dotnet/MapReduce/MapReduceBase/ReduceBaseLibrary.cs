@@ -1,12 +1,13 @@
 ﻿using System;
 using DefLib;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 namespace MapReduceBase
 {
 	public abstract class ReduceBaseLibrary<KeyIn, ValueIn, KeyOut, ValueOut> : MonoBaseLibraryFunction
 	{
-		private Dictionary<KeyOut, ValueOut> ReduceResult = new Dictionary<KeyOut, ValueOut>();
+		private JArray ReduceResult = new JArray();
 
 		#region implemented abstract members of MonoBaseLibraryFunction
 		public override void Execute ()
@@ -43,7 +44,10 @@ namespace MapReduceBase
 		/// <param name="key">The key of the tuple</param>
 		/// <paraReduceResult="value">The value of the tuple</param>
 		public void Emit(KeyOut key, ValueOut value) {
-			ReduceResult.Add (key, value);
+			var tuple = new JArray ();
+			tuple.Add (key);
+			tuple.Add (value);
+			ReduceResult.Add (tuple);
 		}
 
 		/// <summary>

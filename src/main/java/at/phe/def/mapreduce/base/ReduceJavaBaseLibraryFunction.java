@@ -2,6 +2,8 @@ package at.phe.def.mapreduce.base;
 
 import at.enfilo.def.prototype1.commons.DEFTypeConverter;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,9 +14,9 @@ import java.util.List;
  * Author: Philip Heimböck
  * Date: 06.05.16.
  */
-public abstract class ReduceJavaBaseLibraryFunction<Key, Value, KeyOut, ValueOut> extends JavaBaseLibraryFunction {
+public abstract class ReduceJavaBaseLibraryFunction<Key, Value, KeyOut extends JsonPrimitive, ValueOut extends JsonPrimitive> extends JavaBaseLibraryFunction {
 
-    protected HashMap<KeyOut, ValueOut> result = new HashMap<>();
+    protected JsonArray result = new JsonArray();
 
     Class<Key> keyClass;
     Class<Value> valueClass;
@@ -66,7 +68,11 @@ public abstract class ReduceJavaBaseLibraryFunction<Key, Value, KeyOut, ValueOut
      * @param value The value of the tuple
      */
     protected void emit(KeyOut key, ValueOut value) {
-        result.put(key, value);
+        JsonArray tuple = new JsonArray();
+        tuple.add(key);
+        tuple.add(value);
+
+        result.add(tuple);
     }
 
     /**
