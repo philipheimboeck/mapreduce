@@ -1,0 +1,39 @@
+@startuml
+
+!include skin.puml
+
+activate JavaBaseLibraryFunction
+JavaBaseLibraryFunction -> JavaBaseLibraryFunction : setInParameters(inParams : String[])
+JavaBaseLibraryFunction -> PartitionerJavaBaseLibraryFunction : run(parameters : List<String>)
+
+activate PartitionerJavaBaseLibraryFunction
+
+PartitionerJavaBaseLibraryFunction -> TuplePartitioner : partition(parameters[0] : JsonArray)
+activate TuplePartitioner
+
+loop for every tuple in results
+TuplePartitioner -> HashPartitioner : partition(tuple : JsonArray)
+activate HashPartitioner
+TuplePartitioner <-- HashPartitioner : partitions : List<JsonArray>
+deactivate HashPartitioner
+end
+
+PartitionerJavaBaseLibraryFunction <-- TuplePartitioner : partitions : List<JsonArray>
+deactivate TuplePartitioner
+
+loop for every partition
+PartitionerJavaBaseLibraryFunction -> JavaBaseLibraryFunction : writeJobResource(partitionKey, partition)
+activate JavaBaseLibraryFunction
+JavaBaseLibraryFunction --> PartitionerJavaBaseLibraryFunction
+deactivate JavaBaseLibraryFunction
+end
+
+PartitionerJavaBaseLibraryFunction -> JavaBaseLibraryFunction : setResult(partitionKeys : List<String>)
+activate JavaBaseLibraryFunction
+PartitionerJavaBaseLibraryFunction <-- JavaBaseLibraryFunction
+deactivate JavaBaseLibraryFunction
+JavaBaseLibraryFunction <-- PartitionerJavaBaseLibraryFunction
+deactivate PartitionerJavaBaseLibraryFunction
+
+deactivate JavaBaseLibraryFunction
+@enduml

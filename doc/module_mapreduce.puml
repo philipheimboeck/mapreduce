@@ -10,30 +10,30 @@ skinparam class {
     }
 }
 
-interface ICallable<T> {
-    +call() : T
-}
-
 package DEF-MapReduce {
     namespace at.phe.def.mapreduce {
 
         namespace base {
             abstract class MapJavaBaseLibraryFunction<Key, Value> {
                 #result : JsonArray
-                #numberPartitions : int
                 +run(parameters : List<String>) : void
                 #emit(key : Key, value : Value) : void
-                #partition(value : JsonArray) : List<JsonArray>
-                #writePartition(partition : JsonArray) : String
                 #{abstract} runMap(parameters : List<String>) : void
             }
 
             abstract class ReduceJavaBaseLibraryFunction<Key, Value, KeyOut, ValueOut> {
-                #result : HashMap<KeyOut, ValueOut>
+                #result : JsonArray
                 +ReduceJavaBaseLibraryFunction(keyClass : Class<Key>, valueClass : Class<Value>)
                 +run(parameters : List<String>) : void
                 #emit(key : KeyOut, value : ValueOut) : void
                 #{abstract} runReduce(key : Key, values : Collection<Value>) : void
+            }
+
+            abstract class PartitionerJavaBaseLibraryFunction {
+                #numberPartitions : int
+                +run(parameters : List<String>) : void
+                #partition(value : JsonArray) : List<JsonArray>
+                #writePartition(partition : JsonArray) : String
             }
 
             abstract class JavaBaseLibraryFunction {
@@ -43,6 +43,7 @@ package DEF-MapReduce {
 
             JavaBaseLibraryFunction <|-- MapJavaBaseLibraryFunction
             JavaBaseLibraryFunction <|-- ReduceJavaBaseLibraryFunction
+            JavaBaseLibraryFunction <|-- PartitionerJavaBaseLibraryFunction
         }
 
         namespace demo {
@@ -76,17 +77,6 @@ package DEF-MapReduce {
             IPartitioner <|-- HashPartitioner
         }
 
-        class MapTaskCallable<TaskResult>
-        class TaskCallable<TaskResult>
-
-        class MapTaskDTO {
-            -id : String
-            -numberPartitions : int
-        }
-
-        class PartitionHelper {
-            +{static} getPartitionReferences(programId : String, jobId : String, taskId : String) : List<String>
-        }
         class TuplePartitioner {
             #numberReducers : int
             #partitions : List<JsonArray>
@@ -95,14 +85,12 @@ package DEF-MapReduce {
             +getPartitions() : List<JsonArray>
         }
 
-        at.phe.def.mapreduce.base.MapJavaBaseLibraryFunction -> TuplePartitioner : partitioner
+        at.phe.def.mapreduce.base.PartitionerJavaBaseLibraryFunction --> at.phe.def.mapreduce.partitioner.IPartitioner
+        at.phe.def.mapreduce.base.PartitionerJavaBaseLibraryFunction ..> TuplePartitioner : creates
 
         at.phe.def.mapreduce.partitioner.IPartitioner <- TuplePartitioner : partitioner
 
-        .ICallable <|-- MapTaskCallable
-        .ICallable <|-- TaskCallable
 
-        MapTaskDTO <- MapTaskCallable : task
     }
 }
 
@@ -115,10 +103,6 @@ skinparam class {
     attribute {
         FontSize 12
     }
-}
-
-interface ICallable<T> {
-    +call() : T
 }
 
 package DEF-Commons {
@@ -156,20 +140,6 @@ package DEF-WorkerAPI {
     }
 }
 
-package DEF-WorkerModule {
-    namespace at.enfilo.def.prototype1.workermodule {
-        class DispatcherClient {
-            +runTask(task : TaskDTO) : TaskResult
-        }
-    }
-}
-
-package DEF-Domain {
-    namespace at.enfilo.def.prototype1.domain {
-        class Task
-    }
-}
-
 package DEF-MapReduce {
     namespace at.phe.def.mapreduce {
 
@@ -180,32 +150,22 @@ package DEF-MapReduce {
                 +{abstract} run(parameters : List<String>) : void
             }
 
-            JavaBaseLibraryFunction <|-- MapJavaBaseLibraryFunction
-            JavaBaseLibraryFunction <|-- ReduceJavaBaseLibraryFunction
             at.enfilo.def.prototype1.workerapi.JavaBaseLibraryFunction <|-- JavaBaseLibraryFunction
         }
 
-
-        class MapTaskCallable<TaskResult>
-        class TaskCallable<TaskResult>
 
         class MapTaskDTO {
         }
 
 
-        .ICallable <|-- MapTaskCallable
-        .ICallable <|-- TaskCallable
-
-
-        at.enfilo.def.prototype1.workermodule.DispatcherClient <- MapTaskCallable : dispatcher
-        at.enfilo.def.prototype1.commons.PersistenceHandler <- MapTaskCallable : persistenceHandler
+        at.enfilo.def.prototype1.commons.PersistenceHandler <-- MapTaskCallable : persistenceHandler
 
         at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : appTask
         at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : mapTask
+        at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : combinerTask
+        at.enfilo.def.prototype1.commons.remote.TaskDTO <- MapTaskDTO : partitionTask
         MapTaskDTO <- MapTaskCallable : task
 
-        at.enfilo.def.prototype1.workermodule.DispatcherClient <- TaskCallable : dispatcher
-        at.enfilo.def.prototype1.domain.Task <- TaskCallable : task
     }
 }
 

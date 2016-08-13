@@ -32,13 +32,7 @@ DispatcherClient <--] : result : TaskResult
 MapTaskCallable <-- DispatcherClient : result : TaskResult
 deactivate DispatcherClient
 
-
-group copy application results to map input
-    MapTaskCallable -> PersistenceHandler : readResult(appTask.id : String)
-    MapTaskCallable <-- PersistenceHandler : taskResult : String
-    MapTaskCallable -> PersistenceHandler : writeResource(mapTask.parameters[1] : String, taskResult : String)
-    MapTaskCallable <-- PersistenceHandler
-end
+MapTaskCallable -> MapTaskCallable : copyTaskResultToInput(appTask.id : String, mapTask.id : String)
 
 MapTaskCallable -> DispatcherClient : runTask(mapTask : TaskDTO)
 activate DispatcherClient
@@ -47,6 +41,13 @@ DispatcherClient ->] : invoke()
 DispatcherClient <--] : result : TaskResult
 MapTaskCallable <-- DispatcherClient : result : TaskResult
 deactivate DispatcherClient
+
+...
+note left
+          Also execute combiner
+          and partitioning functions
+          after the map function
+end note
 
 MapTaskCallable --> ExecutorService : result : TaskResult
 deactivate MapTaskCallable
@@ -60,12 +61,16 @@ newpage
 
 loop int i = 0; i < mapResults; i++
 ThreadJobDispatcher -> PartitionHelper : getPartitions(mapResults(i).taskId : String)
+activate PartitionHelper
 ThreadJobDispatcher <-- PartitionHelper : partitions : List<String>
+deactivate PartitionHelper
 end
 
 loop int i = 0; i < numberReducers; i++
 ThreadJobDispatcher -> ITaskFactory : createTask(job : Job, reduceLibraryFunction : LibraryFunction, inputArray : List<String>)
+activate ITaskFactory
 ThreadJobDispatcher <-- ITaskFactory : reduceTask : Task
+deactivate ITaskFactory
 create TaskCallable
 ThreadJobDispatcher -> TaskCallable : new(reduceTask : Task)
 end

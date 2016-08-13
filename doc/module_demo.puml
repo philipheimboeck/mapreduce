@@ -33,8 +33,10 @@ package DEF-Domain {
         class MapReduceInfo {
             - int numberReducers
         }
-        LibraryFunction <-- MapReduceInfo : mapLibrary
-        LibraryFunction <-- MapReduceInfo : reduceLibrary
+        LibraryFunction <- MapReduceInfo : mapLibrary
+        LibraryFunction <- MapReduceInfo : reduceLibrary
+        LibraryFunction <- MapReduceInfo : combinerLibrary
+        LibraryFunction <- MapReduceInfo : partitioningLibrary
         Job -> Program
         Job --> MapReduceInfo : mapReduceInfo
         class Task
@@ -94,6 +96,8 @@ package DEF-MapReduce {
             -id : String
             -appTask : TaskDTO
             -mapTask : TaskDTO
+            -combinerTask : TaskDTO
+            -partitionTask : TaskDTO
             -numberPartitions : int
         }
 
@@ -160,6 +164,7 @@ package DEF-Demo {
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : applicationTask
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : mapTask
         MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : reduceTask
+        MapReduceMain -> at.enfilo.def.prototype1.domain.LibraryFunction : partitioningTask
     }
 }
 

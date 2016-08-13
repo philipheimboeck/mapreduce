@@ -14,13 +14,13 @@ import java.util.UUID;
  * Author: Philip Heimböck
  * Date: 11.08.16.
  */
-public abstract class PartitionerBaseLibraryFunction extends JavaBaseLibraryFunction {
+public abstract class PartitionerJavaBaseLibraryFunction extends JavaBaseLibraryFunction {
 
     protected Integer numberPartitions;
 
     protected IPartitioner partitioner;
 
-    public PartitionerBaseLibraryFunction(IPartitioner partitioner) {
+    public PartitionerJavaBaseLibraryFunction(IPartitioner partitioner) {
         this.partitioner = partitioner;
     }
 
